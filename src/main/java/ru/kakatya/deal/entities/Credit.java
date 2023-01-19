@@ -10,6 +10,7 @@ import ru.kakatya.deal.entities.enums.CreditStatus;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Getter
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 public class Credit {
     @Id
     @Column(name = "credit_id")
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long creditId;
 
     @Column(nullable = false)
@@ -37,8 +39,8 @@ public class Credit {
     private BigDecimal psk;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb", nullable = false)
-    private PaymentScheduleElementDto payment_schedule;
+    @Column(columnDefinition = "jsonb", nullable = false, name = "payment_schedule")
+    private List<PaymentScheduleElementDto> paymentSchedule;
 
     @Column(name = "insurance_enable", nullable = false)
     private boolean insuranceEnable;

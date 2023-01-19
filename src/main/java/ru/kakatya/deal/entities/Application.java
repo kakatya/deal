@@ -4,10 +4,12 @@ import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.Data;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
+import ru.kakatya.deal.dtos.LoanOfferDTO;
 import ru.kakatya.deal.entities.enums.ApplicationStatus;
 
 import javax.persistence.*;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Entity
@@ -33,12 +35,19 @@ public class Application {
     private ApplicationStatus status;
 
     @Column(name = "creation_date", nullable = false)
-    private Timestamp creationDate;
+    private LocalDateTime creationDate;
+
+    @Type(type = "jsonb")
+    @Column(name = "applied_offer",columnDefinition = "jsonb")
+    private LoanOfferDTO appliedOffer;
+
+    @Column(name = "sign_date", nullable = false)
+    private LocalDateTime signDate;
 
     @Column(name = "ses_code", nullable = false)
     private String sesCode;
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    private StatusHistory statusHistory;
+    private List<StatusHistory> statusHistory;
 }

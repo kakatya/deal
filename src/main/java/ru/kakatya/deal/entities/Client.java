@@ -45,7 +45,7 @@ public class Client {
     private MaritalStatus maritalStatus;
 
     @Column(name = "Dependent_amount")
-    private int DependentAmount;
+    private int dependentAmount;
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
