@@ -31,32 +31,27 @@ public class DealService {
     public List<LoanOfferDTO> offerCalculation(LoanApplicationRequestDTO dto) {
         LOGGER.info("Calculation of possible loan conditions");
         Client client = createClientEntity(dto);
-        createApplicationEntity(dto, client);
-        return offerServiceFeignClient.issueOffer(dto).getBody();
+        long applicationId = createApplicationEntity(client).getId();
+        List<LoanOfferDTO> loanOffers = offerServiceFeignClient.issueOffer(dto).getBody();
+        for (LoanOfferDTO l : loanOffers) {
+            l.setApplicationId(applicationId);
+        }
+        return loanOffers;
     }
 
     private Client createClientEntity(LoanApplicationRequestDTO dto) {
         LOGGER.info("Create a new client and save it to the database.");
-        Client client = new Client();
-        Passport passport = new Passport();
-        passport.setNumber(dto.getPassportNumber());
-        passport.setSeries(dto.getPassportSeries());
-        client.setEmail(dto.getEmail());
-        client.setFirstName(dto.getFirstName());
-        client.setLastName(dto.getLastName());
-        client.setLastName(dto.getLastName());
-        client.setEmail(dto.getEmail());
-        client.setBirthDate(dto.getBirthdate());
-        client.setPassport(passport);
+        Passport passport = Passport.builder().number(dto.getPassportNumber()).series(dto.getPassportSeries()).build();
+        Client client = Client.builder().email(dto.getEmail()).firstName(dto.getFirstName()).lastName(dto.getLastName())
+                .middleName(dto.getMiddleName()).birthDate(dto.getBirthdate()).passport(passport).build();
         clientRepo.save(client);
         return client;
     }
 
-    private void createApplicationEntity(LoanApplicationRequestDTO dto, Client client) {
+    private Application createApplicationEntity(Client client) {
         LOGGER.info("Create a new client and save it to the database.");
-        Application application = new Application();
-        application.setClient(client);
-        application.setCreationDate(LocalDateTime.now());
+        Application application = Application.builder().client(client).creationDate(LocalDateTime.now()).build();
         applicationRepo.save(application);
+        return application;
     }
 }

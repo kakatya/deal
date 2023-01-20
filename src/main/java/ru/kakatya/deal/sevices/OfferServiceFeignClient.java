@@ -9,7 +9,7 @@ import ru.kakatya.deal.dtos.LoanOfferDTO;
 
 import java.util.List;
 
-@FeignClient(name = "ru.kakatya.conveyor", url = "http://127.0.0.1:8080/conveyor")
+@FeignClient(name = "${service.name}", url = "${service.url}")
 public interface OfferServiceFeignClient {
     @PostMapping("/offers")
     ResponseEntity<List<LoanOfferDTO>> issueOffer(@RequestBody LoanApplicationRequestDTO dto);

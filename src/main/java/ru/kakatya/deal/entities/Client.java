@@ -1,7 +1,10 @@
 package ru.kakatya.deal.entities;
 
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import ru.kakatya.deal.dtos.EmploymentDto;
@@ -13,8 +16,11 @@ import java.time.LocalDate;
 
 @Data
 @Entity
+@Builder
 @Table(name = "client")
 @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
+@NoArgsConstructor
+@AllArgsConstructor
 @SequenceGenerator(name = "entityIdGenerator", sequenceName = "client_id")
 public class Client {
     @Id
@@ -59,4 +65,5 @@ public class Client {
 
     @Column(name = "account")
     private String account;
+
 }
