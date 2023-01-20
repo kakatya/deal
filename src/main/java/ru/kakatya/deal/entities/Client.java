@@ -4,6 +4,7 @@ import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.Data;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
+import ru.kakatya.deal.dtos.EmploymentDto;
 import ru.kakatya.deal.entities.enums.Gender;
 import ru.kakatya.deal.entities.enums.MaritalStatus;
 
@@ -36,11 +37,11 @@ public class Client {
     @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(name = "gender", nullable = false)
+    @Column(name = "gender")
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @Column(name = "marital_status", nullable = false)
+    @Column(name = "marital_status")
     @Enumerated(EnumType.STRING)
     private MaritalStatus maritalStatus;
 
@@ -53,7 +54,7 @@ public class Client {
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    private Employment employment;
+    private EmploymentDto employment;
 
 
     @Column(name = "account")

@@ -1,4 +1,4 @@
-package ru.kakatya.deal.entities;
+package ru.kakatya.deal.dtos;
 
 import lombok.Data;
 import ru.kakatya.deal.entities.enums.EmploymentPosition;
@@ -7,7 +7,7 @@ import ru.kakatya.deal.entities.enums.EmploymentStatus;
 import java.math.BigDecimal;
 
 @Data
-public class Employment {
+public class EmploymentDto {
     private EmploymentStatus status;
     private String employerInn;
     private BigDecimal salary;
