@@ -41,17 +41,28 @@ public class DealService {
 
     private Client createClientEntity(LoanApplicationRequestDTO dto) {
         LOGGER.info("Create a new client and save it to the database.");
-        Passport passport = Passport.builder().number(dto.getPassportNumber()).series(dto.getPassportSeries()).build();
-        Client client = Client.builder().email(dto.getEmail()).firstName(dto.getFirstName()).lastName(dto.getLastName())
-                .middleName(dto.getMiddleName()).birthDate(dto.getBirthdate()).passport(passport).build();
-        clientRepo.save(client);
-        return client;
+        Passport passport = Passport.builder()
+                .number(dto.getPassportNumber())
+                .series(dto.getPassportSeries())
+                .build();
+        Client client = Client.builder()
+                .email(dto.getEmail())
+                .firstName(dto.getFirstName())
+                .lastName(dto.getLastName())
+                .middleName(dto.getMiddleName())
+                .birthDate(dto.getBirthdate())
+                .passport(passport)
+                .build();
+        return clientRepo.save(client);
     }
 
     private Application createApplicationEntity(Client client) {
         LOGGER.info("Create a new client and save it to the database.");
-        Application application = Application.builder().client(client).creationDate(LocalDateTime.now()).build();
-        applicationRepo.save(application);
-        return application;
+        Application application = Application.builder()
+                .client(client)
+                .creationDate(LocalDateTime.now())
+                .build();
+
+        return applicationRepo.save(application);
     }
 }
