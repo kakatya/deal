@@ -1,9 +1,13 @@
 package ru.kakatya.deal.entities;
 
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
+import ru.kakatya.deal.dtos.EmploymentDto;
 import ru.kakatya.deal.entities.enums.Gender;
 import ru.kakatya.deal.entities.enums.MaritalStatus;
 
@@ -12,8 +16,11 @@ import java.time.LocalDate;
 
 @Data
 @Entity
+@Builder
 @Table(name = "client")
 @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
+@NoArgsConstructor
+@AllArgsConstructor
 @SequenceGenerator(name = "entityIdGenerator", sequenceName = "client_id")
 public class Client {
     @Id
@@ -36,11 +43,11 @@ public class Client {
     @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(name = "gender", nullable = false)
+    @Column(name = "gender")
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @Column(name = "marital_status", nullable = false)
+    @Column(name = "marital_status")
     @Enumerated(EnumType.STRING)
     private MaritalStatus maritalStatus;
 
@@ -53,9 +60,10 @@ public class Client {
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    private Employment employment;
+    private EmploymentDto employment;
 
 
     @Column(name = "account")
     private String account;
+
 }

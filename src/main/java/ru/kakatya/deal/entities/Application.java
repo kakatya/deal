@@ -1,7 +1,10 @@
 package ru.kakatya.deal.entities;
 
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import ru.kakatya.deal.dtos.LoanOfferDTO;
@@ -14,6 +17,9 @@ import java.util.List;
 @Data
 @Entity
 @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Application {
     @Id
     @Column(name = "application_id")
@@ -30,24 +36,25 @@ public class Application {
     @OneToOne(cascade = CascadeType.ALL)
     private Credit credit;
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private ApplicationStatus status;
 
-    @Column(name = "creation_date", nullable = false)
+    @Column(name = "creation_date")
     private LocalDateTime creationDate;
 
     @Type(type = "jsonb")
     @Column(name = "applied_offer",columnDefinition = "jsonb")
     private LoanOfferDTO appliedOffer;
 
-    @Column(name = "sign_date", nullable = false)
+    @Column(name = "sign_date")
     private LocalDateTime signDate;
 
-    @Column(name = "ses_code", nullable = false)
+    @Column(name = "ses_code")
     private String sesCode;
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
     private List<StatusHistory> statusHistory;
+
 }

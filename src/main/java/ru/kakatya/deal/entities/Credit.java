@@ -1,8 +1,7 @@
 package ru.kakatya.deal.entities;
 
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import ru.kakatya.deal.dtos.PaymentScheduleElementDto;
@@ -15,7 +14,10 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
+@Builder
 @Table(name = "credit")
+@NoArgsConstructor
+@AllArgsConstructor
 @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 public class Credit {
     @Id
@@ -51,4 +53,5 @@ public class Credit {
     @Enumerated(EnumType.STRING)
     @Column(name = "credit_status", nullable = false)
     private CreditStatus creditStatus;
+
 }
