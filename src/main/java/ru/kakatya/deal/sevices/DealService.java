@@ -10,11 +10,13 @@ import ru.kakatya.deal.entities.*;
 import ru.kakatya.deal.entities.enums.ApplicationStatus;
 import ru.kakatya.deal.entities.enums.ChangeType;
 import ru.kakatya.deal.entities.enums.CreditStatus;
+import ru.kakatya.deal.exceptions.ScoringException;
 import ru.kakatya.deal.repos.ApplicationRepo;
 import ru.kakatya.deal.repos.ClientRepo;
 import ru.kakatya.deal.repos.CreditRepo;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -48,7 +50,10 @@ public class DealService {
 
 
         applicationRepo.findById(loanOfferDTO.getApplicationId()).ifPresent(application -> {
-            application.setStatusHistory(StatusHistory.builder()
+            if (application.getStatusHistory() == null) {
+                application.setStatusHistory(new ArrayList<>());
+            }
+            application.getStatusHistory().add(StatusHistory.builder()
                     .status(ApplicationStatus.APPROVED)
                     .changeType(ChangeType.AUTOMATIC)
                     .time(LocalDateTime.now())
@@ -59,27 +64,37 @@ public class DealService {
         });
     }
 
-    public void registerApplication(FinishRegistrationRequestDto dto, Long applicationId) {
+    public void registerApplication(FinishRegistrationRequestDto dto, Long applicationId) throws ScoringException {
         applicationRepo.findById(applicationId).ifPresent(application -> {
             registerClient(dto, application.getClient());
             ScoringDataDTO scoringDataDTO = createScoringData(application);
             LOGGER.info("Calculate credit");
             CreditDTO creditDTO = offerServiceFeignClient.calculateCredit(scoringDataDTO).getBody();
-            Credit credit = createCredit(creditDTO);
+            offerServiceFeignClient.calculateCredit(scoringDataDTO).getBody();
+            Credit credit;
+            if (creditDTO.getAmount()==null) {
+                LOGGER.error("Scoring failed");
+                throw new ScoringException("Scoring failed");
+            }
+            credit = createCredit(creditDTO);
             LOGGER.info("update credit status");
             credit.setCreditStatus(CreditStatus.CALCULATED);
             application.setCredit(creditRepo.save(credit));
             LOGGER.info("update application status");
             application.setStatus(ApplicationStatus.CC_APPROVED);
-            application.setStatusHistory(StatusHistory.builder()
-                    .time(LocalDateTime.now())
+            if (application.getStatusHistory() == null) {
+                application.setStatusHistory(new ArrayList<>());
+            }
+            application.getStatusHistory().add(StatusHistory.builder()
                     .status(ApplicationStatus.CC_APPROVED)
                     .changeType(ChangeType.AUTOMATIC)
+                    .time(LocalDateTime.now())
                     .build());
             applicationRepo.save(application);
         });
     }
-    private ScoringDataDTO createScoringData(Application application){
+
+    private ScoringDataDTO createScoringData(Application application) {
         LOGGER.info("crate scoringData");
         return ScoringDataDTO.builder()
                 .amount(application.getAppliedOffer().getRequestedAmount())

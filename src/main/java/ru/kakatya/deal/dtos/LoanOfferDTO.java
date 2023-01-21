@@ -2,10 +2,11 @@ package ru.kakatya.deal.dtos;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
-public class LoanOfferDTO {
+public class LoanOfferDTO implements Serializable {
     private Long applicationId;
     private BigDecimal requestedAmount;
     private BigDecimal totalAmount;
