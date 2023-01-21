@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
-import ru.kakatya.deal.dtos.EmploymentDto;
+import ru.kakatya.deal.dtos.EmploymentDTO;
 import ru.kakatya.deal.entities.enums.Gender;
 import ru.kakatya.deal.entities.enums.MaritalStatus;
 
@@ -60,7 +60,7 @@ public class Client {
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    private EmploymentDto employment;
+    private EmploymentDTO employment;
 
 
     @Column(name = "account")

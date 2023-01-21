@@ -12,7 +12,6 @@ import ru.kakatya.deal.entities.enums.ApplicationStatus;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Entity
@@ -44,7 +43,7 @@ public class Application {
     private LocalDateTime creationDate;
 
     @Type(type = "jsonb")
-    @Column(name = "applied_offer",columnDefinition = "jsonb")
+    @Column(name = "applied_offer", columnDefinition = "jsonb")
     private LoanOfferDTO appliedOffer;
 
     @Column(name = "sign_date")
@@ -55,6 +54,6 @@ public class Application {
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    private List<StatusHistory> statusHistory;
+    private StatusHistory statusHistory;
 
 }
