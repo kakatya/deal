@@ -13,6 +13,6 @@ public class FinishRegistrationRequestDto {
     private Integer dependentAmount;
     private LocalDate passportIssueDate;
     private String passportIssueBranch;
-    private EmploymentDto employment;
+    private EmploymentDTO employment;
     private String account;
 }

@@ -11,6 +11,7 @@ import ru.kakatya.deal.dtos.LoanOfferDTO;
 import ru.kakatya.deal.entities.enums.ApplicationStatus;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,7 +21,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Application {
+public class Application implements Serializable {
     @Id
     @Column(name = "application_id")
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -44,7 +45,7 @@ public class Application {
     private LocalDateTime creationDate;
 
     @Type(type = "jsonb")
-    @Column(name = "applied_offer",columnDefinition = "jsonb")
+    @Column(name = "applied_offer", columnDefinition = "jsonb")
     private LoanOfferDTO appliedOffer;
 
     @Column(name = "sign_date")

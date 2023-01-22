@@ -7,11 +7,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
-import ru.kakatya.deal.dtos.EmploymentDto;
+import ru.kakatya.deal.dtos.EmploymentDTO;
 import ru.kakatya.deal.entities.enums.Gender;
 import ru.kakatya.deal.entities.enums.MaritalStatus;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
@@ -22,7 +23,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @SequenceGenerator(name = "entityIdGenerator", sequenceName = "client_id")
-public class Client {
+public class Client implements Serializable {
     @Id
     @GeneratedValue(generator = "entityIdGenerator")
     @Column(name = "client_id", nullable = false, unique = true)
@@ -60,7 +61,7 @@ public class Client {
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    private EmploymentDto employment;
+    private EmploymentDTO employment;
 
 
     @Column(name = "account")

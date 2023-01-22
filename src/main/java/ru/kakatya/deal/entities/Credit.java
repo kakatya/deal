@@ -8,50 +8,53 @@ import ru.kakatya.deal.dtos.PaymentScheduleElementDto;
 import ru.kakatya.deal.entities.enums.CreditStatus;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-@Getter
-@Setter
+@Data
 @Builder
 @Table(name = "credit")
 @NoArgsConstructor
 @AllArgsConstructor
 @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
-public class Credit {
+@SequenceGenerator(name = "entityIdGenerator", sequenceName = "credit_id")
+public class Credit implements Serializable {
     @Id
-    @Column(name = "credit_id")
+    @Column(name = "credit_id", nullable = false, unique = true)
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long creditId;
-
-    @Column(nullable = false)
+    private Long creditId;
     private BigDecimal amount;
-
-    @Column(nullable = false)
-    private int term;
-
-    @Column(name = "monthly_payment", nullable = false)
+    private Integer term;
+    @Column(name = "monthly_payment")
     private BigDecimal monthlyPayment;
-
-    @Column(nullable = false)
     private BigDecimal rate;
 
-    @Column(nullable = false)
     private BigDecimal psk;
-
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb", nullable = false, name = "payment_schedule")
+    @Column(columnDefinition = "jsonb", name = "payment_schedule")
     private List<PaymentScheduleElementDto> paymentSchedule;
-
-    @Column(name = "insurance_enable", nullable = false)
-    private boolean insuranceEnable;
-
-    @Column(name = "salary_client", nullable = false)
-    private boolean salaryClient;
-
+    @Column(name = "insurance_enable")
+    private Boolean insuranceEnable;
+    @Column(name = "salary_client")
+    private Boolean salaryClient;
     @Enumerated(EnumType.STRING)
-    @Column(name = "credit_status", nullable = false)
+    @Column(name = "credit_status")
     private CreditStatus creditStatus;
-
+    @Override
+    public String toString() {
+        return "Credit{" +
+                "creditId=" + creditId +
+                ", amount=" + amount +
+                ", term=" + term +
+                ", monthlyPayment=" + monthlyPayment +
+                ", rate=" + rate +
+                ", psk=" + psk +
+                ", paymentSchedule=" + paymentSchedule +
+                ", insuranceEnable=" + insuranceEnable +
+                ", salaryClient=" + salaryClient +
+                ", creditStatus=" + creditStatus +
+                '}';
+    }
 }
