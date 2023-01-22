@@ -70,7 +70,6 @@ public class DealService {
             ScoringDataDTO scoringDataDTO = createScoringData(application);
             LOGGER.info("Calculate credit");
             CreditDTO creditDTO = offerServiceFeignClient.calculateCredit(scoringDataDTO).getBody();
-            offerServiceFeignClient.calculateCredit(scoringDataDTO).getBody();
             Credit credit;
             if (creditDTO.getAmount()==null) {
                 LOGGER.error("Scoring failed");

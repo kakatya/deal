@@ -24,9 +24,9 @@ public class Credit implements Serializable {
     @Id
     @Column(name = "credit_id", nullable = false, unique = true)
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long creditId;
+    private Long creditId;
     private BigDecimal amount;
-    private int term;
+    private Integer term;
     @Column(name = "monthly_payment")
     private BigDecimal monthlyPayment;
     private BigDecimal rate;
@@ -36,9 +36,9 @@ public class Credit implements Serializable {
     @Column(columnDefinition = "jsonb", name = "payment_schedule")
     private List<PaymentScheduleElementDto> paymentSchedule;
     @Column(name = "insurance_enable")
-    private boolean insuranceEnable;
+    private Boolean insuranceEnable;
     @Column(name = "salary_client")
-    private boolean salaryClient;
+    private Boolean salaryClient;
     @Enumerated(EnumType.STRING)
     @Column(name = "credit_status")
     private CreditStatus creditStatus;
