@@ -140,7 +140,14 @@ public class DealService {
     private void registerClient(FinishRegistrationRequestDto dto, Client client) {
         client.getPassport().setIssueBranch(dto.getPassportIssueBranch());
         client.getPassport().setIssueDate(dto.getPassportIssueDate());
-        client.setEmployment(dto.getEmployment());
+        client.setEmployment(EmploymentDTO.builder()
+                .workExperienceTotal(dto.getEmployment().getWorkExperienceTotal())
+                .workExperienceCurrent(dto.getEmployment().getWorkExperienceCurrent())
+                .salary(dto.getEmployment().getSalary())
+                .position(dto.getEmployment().getPosition())
+                .employmentStatus(dto.getEmployment().getEmploymentStatus())
+                .employerINN(dto.getEmployment().getEmployerINN())
+                .build());
         client.setGender(dto.getGender());
         client.setMaritalStatus(dto.getMaritalStatus());
         client.setAccount(dto.getAccount());
