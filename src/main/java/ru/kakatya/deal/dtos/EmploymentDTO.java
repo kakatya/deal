@@ -7,13 +7,14 @@ import lombok.NoArgsConstructor;
 import ru.kakatya.deal.entities.enums.EmploymentPosition;
 import ru.kakatya.deal.entities.enums.EmploymentStatus;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmploymentDTO {
+public class EmploymentDTO implements Serializable {
     private EmploymentStatus employmentStatus;
     private String employerINN;
     private BigDecimal salary;
