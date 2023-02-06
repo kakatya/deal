@@ -70,4 +70,10 @@ public class DealController {
     public ResponseEntity<List<ApplicationDto>> getAllApplications() {
         return ResponseEntity.ok().body(dealService.getAllApplication());
     }
+
+    @PutMapping("/admin/application/{applicationId}/status")
+    public ResponseEntity<Void> changeApplicationStatus(@PathVariable Long applicationId) {
+        dealService.changeStatusApl(applicationId);
+        return ResponseEntity.ok().build();
+    }
 }

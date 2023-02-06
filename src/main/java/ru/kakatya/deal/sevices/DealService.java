@@ -3,6 +3,7 @@ package ru.kakatya.deal.sevices;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,7 @@ import ru.kakatya.deal.repos.CreditRepo;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.NoSuchElementException;
 
 @Service
 @EnableFeignClients
@@ -39,100 +40,156 @@ public class DealService {
     private KafkaTemplate<String, EmailMessageDto> kafkaTemplate;
     @Autowired
     private Mapper mapper;
+    @Value("${topics.finish-registr}")
+    private String finishRegTopic;
+    @Value("${topics.create-doc}")
+    private String createDocTopic;
+    @Value("${topics.send-doc}")
+    private String sendDocTopic;
+    @Value("${topics.send-ses}")
+    private String sendSesTopic;
+    @Value("${topics.credit-issd}")
+    private String creditIssuedTopic;
+    @Value("${topics.appl-denied}")
+    private String applDenied;
 
     public List<LoanOfferDTO> offerCalculation(LoanApplicationRequestDTO dto) {
         LOGGER.info("Calculation of possible loan conditions");
         Client client = createClientEntity(dto);
         long applicationId = createApplicationEntity(client).getId();
         List<LoanOfferDTO> loanOffers = offerServiceFeignClient.issueOffer(dto).getBody();
-        for (LoanOfferDTO l : loanOffers) {
-            l.setApplicationId(applicationId);
+        if (loanOffers != null) {
+            for (LoanOfferDTO l : loanOffers) {
+                l.setApplicationId(applicationId);
+            }
         }
         return loanOffers;
     }
-
-    public void chooseOffer(LoanOfferDTO loanOfferDTO) {
-        LOGGER.info("Set Application status: {}", ApplicationStatus.APPROVED);
-        LOGGER.info("Set Change type: {}", ChangeType.AUTOMATIC);
-        AtomicReference<String> email = new AtomicReference<>();
-        applicationRepo.findById(loanOfferDTO.getApplicationId()).ifPresent(application -> {
-            changeStatus(application, ApplicationStatus.APPROVED, ChangeType.AUTOMATIC);
-            application.setAppliedOffer(loanOfferDTO);
-            email.set(application.getClient().getEmail());
-            applicationRepo.save(application);
-        });
-        LOGGER.info("Send message to dossier with topic: {}; applicationId: {}", Theme.FINISH_REGISTRATION.name(), loanOfferDTO.getApplicationId());
-        kafkaTemplate.send(Theme.FINISH_REGISTRATION.name(), createEmailMessageDto(loanOfferDTO.getApplicationId(), Theme.FINISH_REGISTRATION));
+    public void chooseOffer(LoanOfferDTO loanOfferDTO) throws NoSuchElementException {
+        applicationRepo.findById(loanOfferDTO.getApplicationId()).ifPresentOrElse(application -> {
+                    LOGGER.info("Set Application status: {}", ApplicationStatus.APPROVED);
+                    LOGGER.info("Set Change type: {}", ChangeType.AUTOMATIC);
+                    changeStatus(application, ApplicationStatus.APPROVED, ChangeType.AUTOMATIC);
+                    application.setAppliedOffer(loanOfferDTO);
+                    applicationRepo.save(application);
+                    LOGGER.info("Send message to dossier with topic: {}; applicationId: {}", Theme.FINISH_REGISTRATION.name(), loanOfferDTO.getApplicationId());
+                    kafkaTemplate.send(finishRegTopic, createEmailMessageDto(loanOfferDTO.getApplicationId(), Theme.FINISH_REGISTRATION));
+                },
+                () -> {
+                    throw new NoSuchElementException(String.format("Application with id %s not found", loanOfferDTO.getApplicationId()));
+                });
     }
 
-    public void registerApplication(FinishRegistrationRequestDto dto, Long applicationId) throws ScoringException {
-        applicationRepo.findById(applicationId).ifPresent(application -> {
-            registerClient(dto, application.getClient());
-            ScoringDataDTO scoringDataDTO = createScoringData(application);
-            LOGGER.info("Calculate credit");
-            CreditDTO creditDTO = offerServiceFeignClient.calculateCredit(scoringDataDTO).getBody();
-            Credit credit;
-            if (creditDTO.getAmount() == null) {
-                application.setStatus(ApplicationStatus.CC_DENIED);
-                LOGGER.error("Scoring failed");
-                changeStatus(application, ApplicationStatus.CC_DENIED, ChangeType.AUTOMATIC);
-                kafkaTemplate.send(Theme.APPLICATION_DENIED.name(),
-                        createEmailMessageDto(applicationId,
-                                Theme.APPLICATION_DENIED));
-                throw new ScoringException("Scoring failed");
-            }
-            credit = mapper.createCreditEntity(creditDTO);
-            LOGGER.info("update credit status");
-            credit.setCreditStatus(CreditStatus.CALCULATED);
-            creditRepo.save(credit);
-            application.setCredit(creditRepo.save(credit));
-            applicationRepo.save(application);
-            changeStatus(application, ApplicationStatus.CC_APPROVED, ChangeType.AUTOMATIC);
-            kafkaTemplate.send(Theme.CREATE_DOCUMENTS.name(),
-                    createEmailMessageDto(applicationId, Theme.CREATE_DOCUMENTS));
-        });
+    public void registerApplication(FinishRegistrationRequestDto dto, Long applicationId) throws ScoringException, NoSuchElementException {
+        applicationRepo.findById(applicationId).ifPresentOrElse(application -> {
+                    if (!application.getStatus().name().equals(ApplicationStatus.APPROVED.name())) {
+                        throw new NoSuchElementException(String.format("Application with status %s not found", ApplicationStatus.APPROVED.name()));
+                    }
+                    registerClient(dto, application.getClient());
+                    ScoringDataDTO scoringDataDTO = createScoringData(application);
+                    LOGGER.info("Calculate credit");
+                    CreditDTO creditDTO = offerServiceFeignClient.calculateCredit(scoringDataDTO).getBody();
+                    Credit credit;
+                    if (creditDTO.getAmount() == null) {
+                        application.setStatus(ApplicationStatus.CC_DENIED);
+                        LOGGER.error("Scoring failed");
+                        changeStatus(application, ApplicationStatus.CC_DENIED, ChangeType.AUTOMATIC);
+                        kafkaTemplate.send(Theme.APPLICATION_DENIED.name(),
+                                createEmailMessageDto(applicationId,
+                                        Theme.APPLICATION_DENIED));
+                        throw new ScoringException("Scoring failed");
+                    }
+                    credit = mapper.createCreditEntity(creditDTO);
+                    LOGGER.info("update credit status");
+                    credit.setCreditStatus(CreditStatus.CALCULATED);
+                    creditRepo.save(credit);
+                    application.setCredit(creditRepo.save(credit));
+                    applicationRepo.save(application);
+                    changeStatus(application, ApplicationStatus.CC_APPROVED, ChangeType.AUTOMATIC);
+                    kafkaTemplate.send(createDocTopic,
+                            createEmailMessageDto(applicationId, Theme.CREATE_DOCUMENTS));
+                },
+                () -> {
+                    throw new NoSuchElementException(String.format("Application with id %s not found", applicationId));
+                });
     }
 
-    public void createDocuments(Long applicationId) {
+    public void createDocuments(Long applicationId) throws NoSuchElementException {
         LOGGER.info("Send message to dossier with topic: {}; applicationId: {}", Theme.SEND_DOCUMENTS, applicationId);
-        applicationRepo.findById(applicationId).ifPresent(application -> {
-            changeStatus(application, ApplicationStatus.PREPARE_DOCUMENTS, ChangeType.AUTOMATIC);
-        });
-        kafkaTemplate.send(Theme.SEND_DOCUMENTS.name(), createEmailMessageDto(applicationId, Theme.SEND_DOCUMENTS));
+        applicationRepo.findById(applicationId).ifPresentOrElse(application -> {
+                    if (!application.getStatus().name().equals(ApplicationStatus.CC_APPROVED.name())) {
+                        throw new NoSuchElementException(String.format("Application with status %s not found", ApplicationStatus.CC_APPROVED.name()));
+                    }
+                    changeStatus(application, ApplicationStatus.PREPARE_DOCUMENTS, ChangeType.AUTOMATIC);
+                },
+                () -> {
+                    throw new NoSuchElementException(String.format("Application with id %s not found", applicationId));
+                });
+        kafkaTemplate.send(sendDocTopic, createEmailMessageDto(applicationId, Theme.SEND_DOCUMENTS));
     }
 
-    public void sendSesCode(Long applicationId) {
+    public void changeStatusApl(Long applicationId) throws NoSuchElementException {
+        applicationRepo.findById(applicationId).ifPresentOrElse(application -> {
+                    if (!application.getStatus().name().equals(ApplicationStatus.PREPARE_DOCUMENTS.name())) {
+                        throw new NoSuchElementException(String.format("Application with status %s not found", ApplicationStatus.PREPARE_DOCUMENTS.name()));
+                    }
+                    changeStatus(application, ApplicationStatus.DOCUMENT_CREATED, ChangeType.AUTOMATIC);
+                },
+                () -> {
+                    throw new NoSuchElementException(String.format("Application with id %s not found", applicationId));
+                });
+    }
+
+    public void sendSesCode(Long applicationId) throws NoSuchElementException {
         LOGGER.info("Send message to dossier with topic: {}; applicationId: {}", Theme.SEND_SES, applicationId);
         String sesCode = String.valueOf(1000 + Math.random() * 9000);
-        applicationRepo.findById(applicationId).ifPresent(application -> {
-            application.setSesCode(sesCode);
-            applicationRepo.save(application);
-        });
-        kafkaTemplate.send(Theme.SEND_SES.name(), createEmailMessageDto(applicationId, Theme.SEND_SES));
+        applicationRepo.findById(applicationId).ifPresentOrElse(application -> {
+                    if (!application.getStatus().name().equals(ApplicationStatus.DOCUMENT_CREATED.name())) {
+                        throw new NoSuchElementException(String.format("Application with status %s not found", ApplicationStatus.DOCUMENT_CREATED.name()));
+                    }
+                    application.setSesCode(sesCode);
+                    applicationRepo.save(application);
+                },
+                () -> {
+                    throw new NoSuchElementException(String.format("Application with id %s not found", applicationId));
+                });
+        kafkaTemplate.send(sendSesTopic, createEmailMessageDto(applicationId, Theme.SEND_SES));
     }
 
-    public void checkSesCode(Long applicationId, String sesCode) {
-        applicationRepo.findById(applicationId).ifPresent(application -> {
-            boolean result = application.getSesCode().equals(sesCode);
-            if (result) {
-                kafkaTemplate.send(Theme.CREDIT_ISSUED.name(), createEmailMessageDto(applicationId, Theme.CREDIT_ISSUED));
-                changeStatus(application, ApplicationStatus.DOCUMENT_SIGNED, ChangeType.AUTOMATIC);
-                applicationRepo.save(application);
-                LOGGER.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!CREDIT ISSUED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                changeStatus(application, ApplicationStatus.CREDIT_ISSUED, ChangeType.AUTOMATIC);
-            } else {
-                kafkaTemplate.send(Theme.APPLICATION_DENIED.name(), createEmailMessageDto(applicationId, Theme.APPLICATION_DENIED));
-                changeStatus(application, ApplicationStatus.CLIENT_DENIED, ChangeType.AUTOMATIC);
-                applicationRepo.save(application);
-            }
-        });
+    public void checkSesCode(Long applicationId, String sesCode) throws NoSuchElementException {
+        applicationRepo.findById(applicationId).ifPresentOrElse(application -> {
+                    if (!application.getStatus().name().equals(ApplicationStatus.DOCUMENT_CREATED.name())) {
+                        throw new NoSuchElementException(String.format("Application with status %s not found", ApplicationStatus.DOCUMENT_CREATED.name()));
+                    }
+                    boolean result = application.getSesCode().equals(sesCode);
+                    if (result) {
+                        kafkaTemplate.send(creditIssuedTopic, createEmailMessageDto(applicationId, Theme.CREDIT_ISSUED));
+                        changeStatus(application, ApplicationStatus.DOCUMENT_SIGNED, ChangeType.AUTOMATIC);
+                        LOGGER.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!CREDIT ISSUED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                        changeStatus(application, ApplicationStatus.CREDIT_ISSUED, ChangeType.AUTOMATIC);
+                    } else {
+                        kafkaTemplate.send(applDenied, createEmailMessageDto(applicationId, Theme.APPLICATION_DENIED));
+                        changeStatus(application, ApplicationStatus.CLIENT_DENIED, ChangeType.AUTOMATIC);
+                    }
+                },
+                () -> {
+                    throw new NoSuchElementException(String.format("Application with id %s not found", applicationId));
+                });
     }
 
-    public ApplicationDto getApplication(Long applicationId) {
-        AtomicReference<Application> applicationAtomicReference = new AtomicReference<>();
-        applicationRepo.findById(applicationId).ifPresent(applicationAtomicReference::set);
+    public ApplicationDto getApplication(Long applicationId) throws NoSuchElementException {
+        Application application = applicationRepo.findById(applicationId).orElseThrow(() -> {
+            throw new NoSuchElementException(String.format("Application with id %s not found", applicationId));
+        });
+        if (application.getStatus().name().equals(ApplicationStatus.CLIENT_DENIED.name()) ||
+                application.getStatus().name().equals(ApplicationStatus.CC_DENIED.name())) {
+            throw new NoSuchElementException(String.format("Application with id %s was denied", applicationId));
+        }
         LOGGER.info("Get application with ID: {}", applicationId);
-        return mapper.createApplicationDto(applicationAtomicReference.get());
+        ApplicationDto applicationDto = mapper.createApplicationDto(application);
+        applicationDto.getClient().setEmployment(application.getClient().getEmployment().toString());
+        applicationDto.getClient().setPassport(application.getClient().getPassport().toString());
+        return applicationDto;
     }
 
     public List<ApplicationDto> getAllApplication() {
@@ -166,13 +223,12 @@ public class DealService {
                 .build();
     }
 
-    private String findClientEmail(Long applicationId) {
-        AtomicReference<String> email = new AtomicReference<>();
-        applicationRepo.findById(applicationId).ifPresent(application -> {
-            email.set(application.getClient().getEmail());
+    private String findClientEmail(Long applicationId) throws NoSuchElementException {
+        Application application = applicationRepo.findById(applicationId).orElseThrow(() -> {
+            throw new NoSuchElementException(String.format("Application with id %s not found", applicationId));
         });
         LOGGER.info("Find client Email");
-        return email.get();
+        return application.getClient().getEmail();
     }
 
     private ScoringDataDTO createScoringData(Application application) {

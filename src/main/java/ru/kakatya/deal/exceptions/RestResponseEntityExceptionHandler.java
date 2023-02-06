@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
 import java.util.Date;
+import java.util.NoSuchElementException;
 
 
 @ControllerAdvice
@@ -19,7 +20,16 @@ public class RestResponseEntityExceptionHandler {
                 new Date(),
                 ex.getMessage(),
                 request.getDescription(false));
+        return new ResponseEntity<>(message, HttpStatus.OK);
+    }
 
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ErrorMessage> noSuchElementException(NoSuchElementException ex, WebRequest request) {
+        ErrorMessage message = new ErrorMessage(
+                HttpStatus.OK.value(),
+                new Date(),
+                ex.getMessage(),
+                request.getDescription(false));
         return new ResponseEntity<>(message, HttpStatus.OK);
     }
 
