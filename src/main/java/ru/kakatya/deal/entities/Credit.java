@@ -36,25 +36,11 @@ public class Credit implements Serializable {
     @Column(columnDefinition = "jsonb", name = "payment_schedule")
     private List<PaymentScheduleElementDto> paymentSchedule;
     @Column(name = "insurance_enable")
-    private Boolean insuranceEnable;
+    private Boolean isInsuranceEnabled;
     @Column(name = "salary_client")
-    private Boolean salaryClient;
+    private Boolean isSalaryClient;
     @Enumerated(EnumType.STRING)
     @Column(name = "credit_status")
     private CreditStatus creditStatus;
-    @Override
-    public String toString() {
-        return "Credit{" +
-                "creditId=" + creditId +
-                ", amount=" + amount +
-                ", term=" + term +
-                ", monthlyPayment=" + monthlyPayment +
-                ", rate=" + rate +
-                ", psk=" + psk +
-                ", paymentSchedule=" + paymentSchedule +
-                ", insuranceEnable=" + insuranceEnable +
-                ", salaryClient=" + salaryClient +
-                ", creditStatus=" + creditStatus +
-                '}';
-    }
+
 }

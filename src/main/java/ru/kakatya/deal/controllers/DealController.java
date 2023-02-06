@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.kakatya.deal.dtos.ApplicationDto;
 import ru.kakatya.deal.dtos.FinishRegistrationRequestDto;
 import ru.kakatya.deal.dtos.LoanApplicationRequestDTO;
 import ru.kakatya.deal.dtos.LoanOfferDTO;
@@ -36,6 +37,43 @@ public class DealController {
     @PutMapping("/calculate/{applicationId}")
     public ResponseEntity<Void> completeRegistration(@RequestBody FinishRegistrationRequestDto registrationRequestDto, @PathVariable long applicationId) {
         dealService.registerApplication(registrationRequestDto, applicationId);
+        return ResponseEntity.ok().build();
+    }
+
+    @ApiOperation("Запрос на отправку документов")
+    @PostMapping("/document/{applicationId}/send")
+    public ResponseEntity<Void> requestSendingDocuments(@PathVariable Long applicationId) {
+        dealService.createDocuments(applicationId);
+        return ResponseEntity.ok().build();
+    }
+
+    @ApiOperation("Запрос на подписание документов")
+    @PostMapping("/document/{applicationId}/sign")
+    public ResponseEntity<Void> requestSigningOfDocuments(@PathVariable Long applicationId) {
+        dealService.sendSesCode(applicationId);
+        return ResponseEntity.ok().build();
+    }
+
+    @ApiOperation("Подписание документов")
+    @PostMapping("/document/{applicationId}/{code}")
+    public ResponseEntity<Void> signDocuments(@PathVariable Long applicationId, @PathVariable String code) {
+        dealService.checkSesCode(applicationId, code);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/admin/application/{applicationId}")
+    public ResponseEntity<ApplicationDto> getApplication(@PathVariable Long applicationId) {
+        return ResponseEntity.ok().body(dealService.getApplication(applicationId));
+    }
+
+    @GetMapping("/admin/application")
+    public ResponseEntity<List<ApplicationDto>> getAllApplications() {
+        return ResponseEntity.ok().body(dealService.getAllApplication());
+    }
+
+    @PutMapping("/admin/application/{applicationId}/status")
+    public ResponseEntity<Void> changeApplicationStatus(@PathVariable Long applicationId) {
+        dealService.changeStatusApl(applicationId);
         return ResponseEntity.ok().build();
     }
 }
